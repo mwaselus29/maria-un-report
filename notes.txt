@@ -1,3 +1,7 @@
 UN Report Project
 
 We plotted life expectancy over time.
+
+We learned how to use the unix shell.
+
+We created a new git repo.
