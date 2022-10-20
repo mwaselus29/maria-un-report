@@ -5,3 +5,7 @@ We plotted life expectancy over time.
 We learned how to use the unix shell.
 
 We created a new git repo.
+
+Hello Maria!
+
+Sorry I didn't pay more attention with the button. Here is a 2nd commit by way of apology.
