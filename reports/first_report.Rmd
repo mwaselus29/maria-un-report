@@ -1,0 +1,77 @@
+---
+title: "Writing Reports with R Markdown"
+author: "Waselus, Maria"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r}
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(here)
+library(knitr)
+```
+
+This report was prepared for the UN.  It analyzes the relationship between a country's GDP, life expectancy, and CO2 emissions.  Our goal was to determine to what degree a country's economic strength or weakness may be related to its public health status and impact on climate pollution.  We hypothesize that both life expectancy and CO2 emissions will increase with a country's GDP.
+
+```{r data}
+gapminder_1997 <- read_csv(here("data/gapminder_1997.csv"))
+spec(gapminder_1997)
+```
+
+```{r gdp_lifeexp_1997}
+ggplot(gapminder_1997, aes(x = gdpPercap, y = lifeExp, color = continent,
+                           size = pop/1000000)) +
+geom_point() +
+  labs(x = "GDP per capita",
+       y = "Life expectancy",
+      title = "Do people in wealthy countries live longer?",
+      size = "Population (in millions)",
+      color = "Continent")
+```
+
+```{r summary_data}
+n_countries <- gapminder_1997 %>%
+  select(country) %>%
+  n_distinct()
+
+min_gdp <- gapminder_1997 %>%
+  summarise(min = round(min(gdpPercap)))
+
+max_gdp <- gapminder_1997 %>%
+  summarise(max = round(max(gdpPercap)))
+```
+
+The above plot shows the relationship between the GDP  per capita and life expectancy for a total of `r n_countries` countries.  For this set of countries, economic wealth ranged from a minimum of $`r min_gdp` to a maximum of $`r max_gdp`` per capita. 
+
+|   Summary of Data   |
+|----------|----------|
+|   Number of countries | `r n_countries` |
+|   Minimum GDP per cap |   `r min_gdp`   |
+|   Maximum GDP per cap |   `r max_gdp`   |
+
+```{r tables}
+gapminder_1997 %>%
+  filter(continent == "Oceania") %>%
+  kable()
+```
+
+## lists
+
+### Unordered lists
+- **R**
+   - subitem
+- *ggplot*
+- ***stringr*** package
+
+### Ordered lists
+1. **R**
+1. *ggplot*
+1. ***stringr*** package
+1. [RMarkdown Reference](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf)

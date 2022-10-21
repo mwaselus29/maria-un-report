@@ -1,0 +1,29 @@
+---
+title: "Rmd-Exercise"
+author: "Maria and Ali"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+``` {r Load library}
+library(tidyverse)
+```
+
+``` {r Read in dataset}
+sparrow <- read_csv(here("data/gapminder_data.csv"))
+```
+
+``` {r Make scatterplot}
+ggplot(sparrow) + 
+       aes(x = year, y = (pop / 1000000)) +
+             geom_point() +
+             facet_wrap(vars(continent))
+```
+```{r }
+sparrow %>%
+  filter(year == 2007 & pop > 10^9)
+```
