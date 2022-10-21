@@ -81,3 +81,126 @@ gapminder_data_2007 <- read_csv("data/gapminder_data.csv") %>%
   filter(year == 2007 & continent == "Americas") %>%
   select(-year, -continent)
 
+### Data cleaning
+library(readr)
+read_csv("data/co2-un-data.csv") #read in data, don't store in object yet
+
+read_csv("data/co2-un-data.csv", skip = 1) #skip the first line
+
+
+read_csv("data/co2-un-data.csv", skip = 2, #skip the first 2 lines
+         col_names = c("region", "country", "year", "series", "value",
+                       "footnotes", "source")) #create new column names
+
+##always want to read in the data to see if it fits your expectations; take nothing for granted!!!
+
+#also could have used rename() to rename column
+read_csv("data/co2-un-data.csv", skip = 1) %>% #read data, skip line1
+  rename(country = ...2)
+
+read_csv("data/co2-un-data.csv", skip = 1) %>%
+  rename_all(tolower)
+
+co2_emissions_dirty <- read_csv("data/co2-un-data.csv", skip = 2, 
+                                col_names = c("region", "country", "year",
+                                              "series", "value","footnotes",
+                                              "source")) 
+
+#We only want country, year, series, value
+co2_emissions_dirty %>%
+  select(country, year, series, value)
+
+co2_emissions <- co2_emissions_dirty %>% #reassiign cleaned up data
+  select(country, year, series, value) %>% #choose these headers
+  mutate(series = recode(series, 
+      "Emissions (thousand metric tons of carbon dioxide)" = "total_emissions", 
+      "Emissions per capita (metric tons of carbon dioxide)" = "per_capita_emissions"
+      ) #rename "dirty" columns
+    ) %>% 
+  pivot_wider(names_from=series, values_from=value) %>% #restructure dataset
+  filter(year == 2005) %>% #select only year 2005
+  select(-year) #drop year since it was filtered in previous step
+  
+
+###Look at structure of data
+  str(gapminder_data)
+  
+### Joining datasets
+df <- inner_join(gapminder_data_2007, co2_emissions) #can select inidex column and only pull in data that exists in both datasets
+view(df) #look at the data
+
+anti_join(gapminder_data_2007, co2_emissions,
+          by = "country") #what are the observations that are in one file but not another?
+#we see that the naming of Bolivia and PR have the country names coded differently
+
+co2_emissions <- read_csv("data/co2-un-data.csv",
+                          skip = 2,
+                          col_names = c("region", "country", "year",
+                          "series", "value", "footnotes", "source")) %>% #change col names
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, 
+                         "Emissions (thousand metric tons of carbon dioxide)" = "total_emissions", 
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita_emissions"
+  ) #rename "dirty" columns
+  ) %>% 
+  pivot_wider(names_from=series, values_from=value) %>% #restructure dataset
+  filter(year == 2005) %>% #select only year 2005
+  select(-year) %>% #drop year since it was filtered in previous step
+  mutate(country = recode(country,
+                          "Bolivia (Plurin. State of)" = "Bolivia",
+                          "United States of America" = "United States",
+                          "Venezuela (Boliv. Rep. of)" = "Venezuela"))
+  
+#a second antijoin
+anti_join(gapminder_data_2007, co2_emissions, by = "country")
+
+#Recode PR to be part of the US because it only occurs in one dataset
+gapminder_data_2007 <- read_csv("data/gapminder_data.csv") %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(-year, -continent) %>%
+  mutate(country = recode(country, "Puerto Rico" = "United States"))
+
+#a second antijoin
+anti_join(gapminder_data_2007, co2_emissions, by = "country")
+
+#get weighted averages of categories
+gapminder_data_2007 <- read_csv("data/gapminder_data.csv") %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(-year, -continent) %>%
+  mutate(country = recode(country, "Puerto Rico" = "United States")) %>%
+  group_by(country) %>%
+  summarise(lifeExp = sum(lifeExp * pop) / sum(pop),
+            gdpPercap = sum(gdpPercap * pop) / sum(pop),
+            pop = sum(pop))
+
+#combine datasets again after the cleanup and tidying
+inner_join(gapminder_data_2007, co2_emissions, by = "country")
+
+#make a new dataset
+gapminder_co2 <- inner_join(gapminder_data_2007, co2_emissions, by = "country")
+
+#what if we want to compare north v south countries? Create new column called "region"
+gapminder_co2 %>%
+  mutate(region = if_else(country == "Canada" |
+                          country == "United States" |
+                          country == "Mexico", "north", "south")) 
+#if country is listed, coded as north; if not, coded as "south"
+
+#create a new .csv using write_csv()
+write_csv(gapminder_co2, "data/gapminder_co2.csv")
+
+
+#### Analyzing/plotting exercises
+ggplot(gapminder_co2, aes(x = gdpPercap, y = per_capita_emissions)) +
+  geom_point() +
+  labs(x = "GDP (per capita)",
+        y = "CO2 emitted (per capita)",
+        title = "There is a strong association between a nation's GDP \nand the amount of CO2 it produces")
+
+#Fit a line to our data
+ggplot(gapminder_co2, aes(x = gdpPercap, y = per_capita_emissions)) +
+  geom_point() +
+  labs(x = "GDP (per capita)",
+       y = "CO2 emitted (per capita)",
+       title = "There is a strong association between a nation's GDP \nand the amount of CO2 it produces") +
+  geom_smooth(method = "lm")
